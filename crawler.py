@@ -27,6 +27,7 @@ index = str(input("輸入想要爬的網址吧!!!"))
 pages = eval(input("想爬幾頁呢???"))
 not_exist = BeautifulSoup('<a>(本文已被刪除)</a>', 'lxml'). a
 titles = []
+dates = []
 nextLink = ""
 
 #爬一頁的method(for 頁數)
@@ -51,4 +52,38 @@ with open("pttGossipTitle.txt", mode = 'w', encoding = 'utf-8') as file:
         file.write(titles[i] + "\n")
 
 #爬一天的method
-#ef getPttVersionDate(url):
+def getPttVersionDate(url, todayDate):
+    response = requests.get(url, headers = my_headers)
+    data = BeautifulSoup(response.text, 'lxml')
+
+    for i in data.find_all('div', class_ = 'r-ent'):
+        date = i.find('div', class_ = 'date')
+        if date.string.strip() == todayDate:
+            dates.append(date.string)
+            if i.a != None:
+                titles.append(i.a.string)
+        else:
+            break
+    
+    link = "https://www.ptt.cc" + str(data.find('div', 'btn-group-paging').find_all('a', 'btn wide')[1].get('href'))
+    nextLink = link
+    
+    return nextLink
+
+#取得今天的日期
+from datetime import datetime
+
+tmp = datetime.now().strftime('%m/%d')
+if tmp[0] == '0':
+    date = tmp[1::]
+else:
+    date = tmp
+
+#八卦版100頁
+for i in range(100):
+    index = getPttVersionDate(index, date)
+
+with open("pttGossipTitle.txt", mode = 'w', encoding = 'utf-8') as file:
+    for j in range(len(dates)):
+        content = str(j + 1) + dates[j] + titles[j] + '\n'
+        file.write(content)
